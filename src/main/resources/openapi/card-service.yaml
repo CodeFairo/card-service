@@ -1,50 +1,52 @@
 openapi: 3.0.3
 info:
   title: Card Service API
-  version: 1.0.0
+  version: 2.0.0
   description: >
-    REST API for managing credit cards (personal and business).
-    Simplified for exam presentation: only essential endpoints.
+    REST API for managing credit and debit cards.
+    - Credit cards: personal and business.
+    - Debit cards: associated with one or more bank accounts (ordered by priority).
 servers:
   - url: http://localhost:8083/api/v1
     description: Local development
 
 tags:
-  - name: Cards
+  - name: CreditCards
     description: Credit card management endpoints
-  - name: Charges
-    description: Endpoints for purchases/consumptions
-  - name: Payments
+  - name: CreditCardCharges
+    description: Endpoints for purchases/consumptions on credit cards
+  - name: CreditCardPayments
     description: Endpoints for credit card payments
+  - name: DebitCards
+    description: Debit card management endpoints
+  - name: DebitCardPayments
+    description: Endpoints for debit card payments/retiros
+  - name: Reports
+    description: Reports for last movements of credit/debit cards
 
 paths:
-  /cards:
+  ##############################
+  # CREDIT CARDS
+  ##############################
+  /creditcards:
     post:
-      tags: [Cards]
+      tags: [CreditCards]
       summary: Create a new credit card
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CardRequestDTO' }
+            schema: { $ref: '#/components/schemas/CreditCardRequestDTO' }
       responses:
         '201':
-          description: Card created successfully
+          description: Credit card created successfully
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CardDTO' }
-              example:
-                id: "card-001"
-                cardType: PERSONAL
-                customerId: "cst-123"
-                creditLimit: 3000.00
-                availableCredit: 3000.00
-                outstandingBalance: 0.00
-                status: ACTIVE
+              schema: { $ref: '#/components/schemas/CreditCardDTO' }
         '400': { description: Invalid request }
 
     get:
-      tags: [Cards]
+      tags: [CreditCards]
       summary: List all credit cards
       parameters:
         - in: query
@@ -57,32 +59,17 @@ paths:
             enum: [PERSONAL, BUSINESS]
       responses:
         '200':
-          description: List of cards
+          description: List of credit cards
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/CardDTO' }
-              example:
-                - id: "card-001"
-                  cardType: PERSONAL
-                  customerId: "cst-123"
-                  creditLimit: 3000.00
-                  availableCredit: 2500.00
-                  outstandingBalance: 500.00
-                  status: ACTIVE
-                - id: "card-002"
-                  cardType: BUSINESS
-                  customerId: "cst-124"
-                  creditLimit: 10000.00
-                  availableCredit: 8000.00
-                  outstandingBalance: 2000.00
-                  status: ACTIVE
+                items: { $ref: '#/components/schemas/CreditCardDTO' }
 
-  /cards/{cardId}:
+  /creditcards/{cardId}:
     get:
-      tags: [Cards]
-      summary: Get card by ID
+      tags: [CreditCards]
+      summary: Get credit card by ID
       parameters:
         - name: cardId
           in: path
@@ -90,35 +77,27 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Card details
+          description: Credit card details
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/CardDTO' }
-              example:
-                id: "card-001"
-                cardType: PERSONAL
-                customerId: "cst-123"
-                creditLimit: 3000.00
-                availableCredit: 2500.00
-                outstandingBalance: 500.00
-                status: ACTIVE
+              schema: { $ref: '#/components/schemas/CreditCardDTO' }
         '404': { description: Card not found }
 
     delete:
-      tags: [Cards]
-      summary: Cancel a card
+      tags: [CreditCards]
+      summary: Cancel a credit card
       parameters:
         - name: cardId
           in: path
           required: true
           schema: { type: string }
       responses:
-        '204': { description: Card cancelled }
+        '204': { description: Credit card cancelled }
         '404': { description: Card not found }
 
-  /cards/{cardId}/balance:
+  /creditcards/{cardId}/balance:
     get:
-      tags: [Cards]
+      tags: [CreditCards]
       summary: Get current balance and available credit
       parameters:
         - name: cardId
@@ -127,26 +106,16 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Card balance
+          description: Credit card balance
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  cardId: { type: string }
-                  creditLimit: { type: number, format: double }
-                  availableCredit: { type: number, format: double }
-                  outstandingBalance: { type: number, format: double }
-              example:
-                cardId: "card-001"
-                creditLimit: 3000.00
-                availableCredit: 2500.00
-                outstandingBalance: 500.00
+                $ref: '#/components/schemas/CreditBalanceDTO'
 
-  /cards/{cardId}/charges:
+  /creditcards/{cardId}/charges:
     post:
-      tags: [Charges]
-      summary: Register a new card consumption
+      tags: [CreditCardCharges]
+      summary: Register a new credit card consumption
       parameters:
         - name: cardId
           in: path
@@ -156,25 +125,18 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/ChargeRequestDTO' }
+            schema: { $ref: '#/components/schemas/CreditChargeRequestDTO' }
       responses:
         '201':
           description: Charge registered
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ChargeDTO' }
-              example:
-                id: "chg-001"
-                cardId: "card-001"
-                amount: 100.00
-                merchant: "Store A"
-                description: "Electronics purchase"
-                chargeDate: "2025-09-29T10:00:00Z"
+              schema: { $ref: '#/components/schemas/CreditChargeDTO' }
         '409': { description: Exceeds credit limit }
 
     get:
-      tags: [Charges]
-      summary: List charges of a card
+      tags: [CreditCardCharges]
+      summary: List credit card charges
       parameters:
         - name: cardId
           in: path
@@ -182,30 +144,17 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Charge history
+          description: List of charges
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/ChargeDTO' }
-              example:
-                - id: "chg-001"
-                  cardId: "card-001"
-                  amount: 100.00
-                  merchant: "Store A"
-                  description: "Electronics purchase"
-                  chargeDate: "2025-09-29T10:00:00Z"
-                - id: "chg-002"
-                  cardId: "card-001"
-                  amount: 50.00
-                  merchant: "Supermarket"
-                  description: "Groceries"
-                  chargeDate: "2025-09-30T15:00:00Z"
+                items: { $ref: '#/components/schemas/CreditChargeDTO' }
 
-  /cards/{cardId}/payments:
+  /creditcards/{cardId}/payments:
     post:
-      tags: [Payments]
-      summary: Register a card payment
+      tags: [CreditCardPayments]
+      summary: Register a credit card payment
       parameters:
         - name: cardId
           in: path
@@ -215,23 +164,17 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/PaymentRequestDTO' }
+            schema: { $ref: '#/components/schemas/CreditPaymentRequestDTO' }
       responses:
         '201':
           description: Payment registered
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PaymentDTO' }
-              example:
-                id: "pay-001"
-                cardId: "card-001"
-                amount: 200.00
-                paymentDate: "2025-09-29T12:00:00Z"
-                balanceAfter: 300.00
+              schema: { $ref: '#/components/schemas/CreditPaymentDTO' }
 
     get:
-      tags: [Payments]
-      summary: List payments of a card
+      tags: [CreditCardPayments]
+      summary: List credit card payments
       parameters:
         - name: cardId
           in: path
@@ -239,27 +182,156 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Payment history
+          description: List of payments
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/PaymentDTO' }
-              example:
-                - id: "pay-001"
-                  cardId: "card-001"
-                  amount: 200.00
-                  paymentDate: "2025-09-29T12:00:00Z"
-                  balanceAfter: 300.00
-                - id: "pay-002"
-                  cardId: "card-001"
-                  amount: 150.00
-                  paymentDate: "2025-10-15T12:00:00Z"
-                  balanceAfter: 150.00
+                items: { $ref: '#/components/schemas/CreditPaymentDTO' }
+
+  /creditcards/{cardId}/movements:
+    get:
+      tags: [Reports]
+      summary: Get last 10 movements (charges + payments) of a credit card
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Last 10 movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MovementDTO' }
+
+  ##############################
+  # DEBIT CARDS
+  ##############################
+  /debitcards:
+    post:
+      tags: [DebitCards]
+      summary: Create a new debit card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DebitCardRequestDTO' }
+      responses:
+        '201':
+          description: Debit card created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DebitCardDTO' }
+
+    get:
+      tags: [DebitCards]
+      summary: List all debit cards
+      parameters:
+        - in: query
+          name: customerId
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of debit cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DebitCardDTO' }
+
+  /debitcards/{cardId}:
+    get:
+      tags: [DebitCards]
+      summary: Get debit card by ID
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Debit card details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DebitCardDTO' }
+        '404': { description: Card not found }
+
+    delete:
+      tags: [DebitCards]
+      summary: Cancel or block a debit card
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Debit card cancelled }
+        '404': { description: Card not found }
+
+  /debitcards/{cardId}/balance:
+    get:
+      tags: [DebitCards]
+      summary: Get balance of the primary account linked to the debit card
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Balance of primary account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebitBalanceDTO'
+
+  /debitcards/{cardId}/payments:
+    post:
+      tags: [DebitCardPayments]
+      summary: Register a payment (withdrawal) with the debit card
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DebitPaymentRequestDTO' }
+      responses:
+        '201':
+          description: Payment registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DebitPaymentDTO' }
+        '409': { description: Insufficient balance in all linked accounts }
+
+  /debitcards/{cardId}/movements:
+    get:
+      tags: [Reports]
+      summary: Get last 10 movements of a debit card
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Last 10 debit card movements
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MovementDTO' }
 
 components:
   schemas:
-    CardRequestDTO:
+    ################ CREDIT ################
+    CreditCardRequestDTO:
       type: object
       properties:
         cardType:
@@ -269,7 +341,7 @@ components:
         creditLimit: { type: number, format: double }
       required: [cardType, customerId, creditLimit]
 
-    CardDTO:
+    CreditCardDTO:
       type: object
       properties:
         id: { type: string }
@@ -282,7 +354,15 @@ components:
           type: string
           enum: [ACTIVE, CANCELLED, BLOCKED]
 
-    ChargeRequestDTO:
+    CreditBalanceDTO:
+      type: object
+      properties:
+        cardId: { type: string }
+        creditLimit: { type: number }
+        availableCredit: { type: number }
+        outstandingBalance: { type: number }
+
+    CreditChargeRequestDTO:
       type: object
       properties:
         amount: { type: number, format: double }
@@ -290,28 +370,95 @@ components:
         description: { type: string }
       required: [amount, merchant]
 
-    ChargeDTO:
+    CreditChargeDTO:
       type: object
       properties:
         id: { type: string }
         cardId: { type: string }
-        amount: { type: number, format: double }
+        amount: { type: number }
         merchant: { type: string }
         description: { type: string }
         chargeDate: { type: string, format: date-time }
 
-    PaymentRequestDTO:
+    CreditPaymentRequestDTO:
       type: object
       properties:
-        amount: { type: number, format: double }
+        amount: { type: number }
         paymentDate: { type: string, format: date-time }
       required: [amount]
 
-    PaymentDTO:
+    CreditPaymentDTO:
       type: object
       properties:
         id: { type: string }
         cardId: { type: string }
-        amount: { type: number, format: double }
+        amount: { type: number }
         paymentDate: { type: string, format: date-time }
-        balanceAfter: { type: number, format: double }
+        balanceAfter: { type: number }
+
+    ################ DEBIT ################
+    DebitCardRequestDTO:
+      type: object
+      properties:
+        customerId: { type: string }
+        primaryAccountId: { type: string }
+        linkedAccounts:
+          type: array
+          items: { $ref: '#/components/schemas/AccountLinkDTO' }
+      required: [customerId, primaryAccountId]
+
+    DebitCardDTO:
+      type: object
+      properties:
+        id: { type: string }
+        customerId: { type: string }
+        primaryAccountId: { type: string }
+        linkedAccounts:
+          type: array
+          items: { $ref: '#/components/schemas/AccountLinkDTO' }
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, CANCELLED]
+        issuedAt: { type: string, format: date }
+
+    AccountLinkDTO:
+      type: object
+      properties:
+        accountId: { type: string }
+        priorityOrder: { type: integer }
+
+    DebitBalanceDTO:
+      type: object
+      properties:
+        cardId: { type: string }
+        primaryAccountId: { type: string }
+        balance: { type: number }
+
+    DebitPaymentRequestDTO:
+      type: object
+      properties:
+        amount: { type: number }
+        merchant: { type: string }
+        description: { type: string }
+      required: [amount]
+
+    DebitPaymentDTO:
+      type: object
+      properties:
+        id: { type: string }
+        cardId: { type: string }
+        accountUsed: { type: string }
+        amount: { type: number }
+        paymentDate: { type: string, format: date-time }
+        remainingBalance: { type: number }
+
+    ################ COMMON ################
+    MovementDTO:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [CHARGE, PAYMENT] }
+        cardId: { type: string }
+        amount: { type: number }
+        description: { type: string }
+        date: { type: string, format: date-time }

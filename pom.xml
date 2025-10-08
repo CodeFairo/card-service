@@ -94,7 +94,30 @@
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 			<version>4.2.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-avro-serializer</artifactId>
+			<version>7.5.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.avro</groupId>
+			<artifactId>avro</artifactId>
+			<version>1.11.3</version>
+		</dependency>
+
 	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>confluent</id>
+			<url>https://packages.confluent.io/maven/</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>
@@ -141,9 +164,9 @@
 							<inputSpec>${project.basedir}/src/main/resources/openapi/card-service.yaml</inputSpec>
 							<generatorName>spring</generatorName>
 							<output>${project.build.directory}/generated-sources/openapi</output>
-							<apiPackage>com.proyecto.card.api</apiPackage>
-							<modelPackage>com.proyecto.card.model</modelPackage>
-							<invokerPackage>com.proyecto.card.invoker</invokerPackage>
+							<apiPackage>com.proyecto.wallet.api</apiPackage>
+							<modelPackage>com.proyecto.wallet.model</modelPackage>
+							<invokerPackage>com.proyecto.wallet.invoker</invokerPackage>
 							<configOptions>
 								<interfaceOnly>true</interfaceOnly>
 								<useSpringBoot3>true</useSpringBoot3>
@@ -173,6 +196,23 @@
 							<sources>
 								<source>${project.build.directory}/generated-sources/openapi/src/main/java</source>
 							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.avro</groupId>
+				<artifactId>avro-maven-plugin</artifactId>
+				<version>1.11.3</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>schema</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+							<outputDirectory>${project.build.directory}/generated-sources/avro</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>
