@@ -1,0 +1,14 @@
+{
+  "namespace": "com.proyecto.wallet.avro",
+  "type": "record",
+  "name": "CustomerCreationRequestedEvent",
+  "fields": [
+    { "name": "walletId", "type": "string" },
+    { "name": "phoneNumber", "type": "string" },
+    { "name": "documentType", "type": "string" },
+    { "name": "documentNumber", "type": "string" },
+    { "name": "email", "type": ["null", "string"], "default": null },
+    { "name": "imei", "type": ["null", "string"], "default": null },
+    { "name": "timestamp", "type": "string" }
+  ]
+}
